@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultra UPI | Secure Payment Gateway</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- QR Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            /* DARK THEME (DEFAULT) */
+            --bg-deep: #050505;
+            --primary: #5b21b6;
+            --primary-light: #8b5cf6;
+            --accent: #06b6d4;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --input-bg: rgba(0, 0, 0, 0.3);
+            --text-main: #ffffff;
+            --text-sec: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --blob-opacity: 0.5;
+        }
+
+        /* LIGHT THEME OVERRIDES */
+        [data-theme="light"] {
+            --bg-deep: #f0f4f8;
+            --primary: #6d28d9;
+            --primary-light: #7c3aed;
+            --glass: rgba(255, 255, 255, 0.75); /* Frosted white */
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #1e293b;
+            --text-sec: #64748b;
+            --blob-opacity: 0.25; /* Softer blobs on light mode */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding-top: 20px;
+        }
+
+        /* Animated Background */
+        .ambient-light {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(91, 33, 182, var(--blob-opacity)) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+            z-index: -1;
+            animation: pulse 10s infinite ease-in-out;
+            pointer-events: none;
+        }
+        
+        .ambient-light-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, var(--blob-opacity)) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            z-index: -1;
+            animation: pulse 12s infinite ease-in-out reverse;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background: var(--glass-border);
+        }
+
+        /* Main Card */
+        .wrapper {
+            width: 100%;
+            max-width: 1100px;
+            margin: 20px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+            padding: 2.5rem;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.2); /* Softer shadow */
+            z-index: 10;
+        }
+
+        /* Form Side */
+        .form-side {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header {
+            margin-bottom: 2.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            color: var(--primary-light);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            /* Gradient Text Logic */
+            background: linear-gradient(to right, var(--text-main), var(--text-sec));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-sec);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Inputs */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .field-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .field-container i {
+            position: absolute;
+            left: 16px;
+            color: var(--text-sec);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px 16px 16px 50px;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+
+        input::placeholder {
+            color: var(--text-sec);
+            opacity: 0.5;
+        }
+
+        input.valid { border-color: var(--success); }
+        input.invalid { border-color: var(--error); }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 10px 20px -5px rgba(91, 33, 182, 0.5);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .generate-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Preview Side */
+        .preview-side {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            border: 1px solid var(--glass-border);
+        }
+
+        .qr-frame {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.15);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .upi-badge {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .btn-sec {
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05); /* Works for dark, needs tweak for light */
+            color: var(--text-main);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        [data-theme="light"] .btn-sec {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        .btn-sec:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        [data-theme="light"] .btn-sec:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-full {
+            grid-column: span 2;
+            background: var(--text-main);
+            color: var(--bg-deep);
+            font-weight: 600;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* FOOTER STYLES */
+        .security-footer {
+            width: 100%;
+            max-width: 1100px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            color: var(--text-sec);
+            font-size: 0.85rem;
+        }
+
+        .sec-col h3 {
+            color: var(--text-main);
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sec-col p {
+            line-height: 1.5;
+            opacity: 0.8;
+        }
+
+        .trust-badges {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .trust-badge {
+            background: rgba(255,255,255,0.05);
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        [data-theme="light"] .trust-badge {
+            background: rgba(0,0,0,0.05);
+        }
+
+        /* CREDITS FOOTER */
+        .made-by {
+            margin-bottom: 20px;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+
+        @media (max-width: 900px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                margin: 10px;
+                margin-top: 60px; /* Space for theme button */
+            }
+            h1 { font-size: 2.5rem; }
+            .security-footer {
+                grid-template-columns: 1fr;
+                padding: 0 1.5rem;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeBtn" aria-label="Toggle Theme">
+        <i class="ri-sun-line"></i>
+    </button>
+
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+
+    <div class="wrapper">
+        <!-- Input Section -->
+        <div class="form-side">
+            <div class="header">
+                <span class="badge">UPI 2.0 Compatible</span>
+                <h1>Payment Link Generator</h1>
+                <p class="subtitle">Securely generate UPI links compatible with GPay, PhonePe, Paytm, and BHIM. Share the link or the QR.</p>
+            </div>
+
+            <form id="upiForm" onsubmit="return false;">
+                <div class="input-group">
+                    <label>UPI ID (VPA) <span style="color:var(--error)">*</span></label>
+                    <div class="field-container">
+                        <i class="ri-user-3-line"></i>
+                        <input type="text" id="vpa" placeholder="username@bank" oninput="validateVPA(this)" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Payee Name <span style="color:var(--text-sec); font-size:0.8em">(Required by apps)</span></label>
+                    <div class="field-container">
+                        <i class="ri-store-2-line"></i>
+                        <input type="text" id="name" placeholder="John Doe or Business Name">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>Amount (₹)</label>
+                        <div class="field-container">
+                            <i class="ri-money-rupee-circle-line"></i>
+                            <input type="number" id="amount" placeholder="0.00" step="0.01" min="1">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Note / Remarks</label>
+                        <div class="field-container">
+                            <i class="ri-sticky-note-line"></i>
+                            <input type="text" id="note" placeholder="Rent, Bill, etc.">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="generate-btn" onclick="generateQR(true)">
+                    <i class="ri-qr-code-line" style="margin-right: 8px;"></i> Generate QR Code
+                </button>
+            </form>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-side">
+            <div class="qr-frame" id="qrContainer">
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="upi-badge">
+                <i class="ri-shield-check-line"></i> Verified Secure Link
+            </div>
+            
+            <div style="margin-bottom: 2rem; color: var(--text-sec); font-size: 0.9rem;">
+                Scan with any UPI App or Click Pay Now
+            </div>
+
+            <div class="action-buttons">
+                <a href="#" id="payLink" class="btn-sec btn-full">
+                    <i class="ri-external-link-line"></i> Pay Now (Open App)
+                </a>
+                <button class="btn-sec" onclick="copyShareableLink()">
+                    <i class="ri-share-line"></i> Copy Share Link
+                </button>
+                <button class="btn-sec" onclick="downloadQR()">
+                    <i class="ri-download-line"></i> Download QR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTHENTICITY & SECURITY FOOTER -->
+    <footer class="security-footer">
+        <div class="sec-col">
+            <h3><i class="ri-lock-2-fill" style="color: var(--primary-light)"></i> Security First</h3>
+            <p>We use <strong>Client-Side Processing</strong>. Your banking details are generated locally on your browser and are never sent to our servers.</p>
+            <div class="trust-badges">
+                <div class="trust-badge"><i class="ri-shield-fill"></i> 256-bit Secure</div>
+                <div class="trust-badge"><i class="ri-eye-off-fill"></i> No Logging</div>
+            </div>
+        </div>
+        <div class="sec-col">
+            <h3><i class="ri-bank-card-fill" style="color: var(--accent)"></i> NPCI Standards</h3>
+            <p>Generated links adhere strictly to NPCI (National Payments Corporation of India) UPI 2.0 URL linking specifications.</p>
+        </div>
+        <div class="sec-col">
+            <h3><i class="ri-question-fill" style="color: var(--text-main)"></i> How it Works</h3>
+            <p>1. Enter your UPI ID.<br>2. Generate a QR or Link.<br>3. Share the <strong>HTTPS</strong> link. The payer will land here, see your payment details pre-filled, and can pay instantly.</p>
+        </div>
+    </footer>
+
+    <!-- CREDITS FOOTER -->
+    <div class="made-by">Made with ❤️ by Deb & AI</div>
+
+    <div class="notification" id="notify">
+        <i class="ri-checkbox-circle-fill"></i> <span id="notifyMsg">Copied!</span>
+    </div>
+
+    <script>
+        // --- THEME LOGIC ---
+        const themeBtn = document.getElementById('themeBtn');
+        const themeIcon = themeBtn.querySelector('i');
+        const html = document.documentElement;
+
+        // Function to set theme
+        function setTheme(theme) {
+            if (theme === 'light') {
+                html.setAttribute('data-theme', 'light');
+                themeIcon.classList.remove('ri-sun-line');
+                themeIcon.classList.add('ri-moon-line');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.removeAttribute('data-theme');
+                themeIcon.classList.remove('ri-moon-line');
+                themeIcon.classList.add('ri-sun-line');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Initialize Theme (Check LocalStorage -> Then System Preference)
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme);
+            } else {
+                // Check System Preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    setTheme('light');
+                } else {
+                    setTheme('dark');
+                }
+            }
+        }
+
+        // Event Listener
+        themeBtn.addEventListener('click', () => {
+            if (html.getAttribute('data-theme') === 'light') {
+                setTheme('dark');
+            } else {
+                setTheme('light');
+            }
+        });
+
+        // Run Init
+        initTheme();
+
+
+        // --- QR CODE & LOGIC ---
+        const qrContainer = document.getElementById("qrcode");
+        let qrcode = new QRCode(qrContainer, {
+            text: "upi://pay?pa=example@bank&pn=Example&cu=INR",
+            width: 220,
+            height: 220,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.Q 
+        });
+
+        window.onload = function() {
+            initTheme(); // Ensure theme loads
+            const params = new URLSearchParams(window.location.search);
+            const pa = params.get('pa');
+            
+            if (pa) {
+                document.getElementById('vpa').value = pa;
+                if(params.has('pn')) document.getElementById('name').value = params.get('pn');
+                if(params.has('am')) document.getElementById('amount').value = params.get('am');
+                if(params.has('tn')) document.getElementById('note').value = params.get('tn');
+                
+                validateVPA(document.getElementById('vpa'));
+                generateQR(false);
+            }
+        };
+
+        function validateVPA(input) {
+            const val = input.value.trim();
+            const vpaRegex = /^[\w.-]+@[\w.-]+$/;
+            
+            if (vpaRegex.test(val)) {
+                input.classList.add('valid');
+                input.classList.remove('invalid');
+            } else if(val.length > 0) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+            } else {
+                input.classList.remove('invalid', 'valid');
+            }
+        }
+
+        function generateQR(showNotif = true) {
+            let vpa = document.getElementById("vpa").value.trim();
+            let name = document.getElementById("name").value.trim();
+            let amount = document.getElementById("amount").value.trim();
+            let note = document.getElementById("note").value.trim();
+
+            if (!vpa || !vpa.includes('@')) {
+                if(showNotif) {
+                    showNotify("Please enter a valid UPI ID", true);
+                    document.getElementById("vpa").focus();
+                }
+                return;
+            }
+
+            if (!name) {
+                const parts = vpa.split('@');
+                name = parts[0];
+                document.getElementById("name").value = name;
+                if(showNotif) showNotify("Name auto-filled (Required)", false);
+            }
+
+            let formattedAmt = "";
+            if (amount) {
+                formattedAmt = parseFloat(amount).toFixed(2);
+            }
+
+            let params = new URLSearchParams();
+            params.append('pa', vpa);
+            params.append('pn', name);
+            if (formattedAmt) params.append('am', formattedAmt);
+            params.append('cu', 'INR');
+            if (note) params.append('tn', note);
+
+            const upiString = `upi://pay?${params.toString()}`;
+
+            qrcode.clear();
+            qrcode.makeCode(upiString);
+
+            document.getElementById("payLink").href = upiString;
+
+            const frame = document.getElementById("qrContainer");
+            frame.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                frame.style.transform = "scale(1)";
+            }, 150);
+        }
+
+        function copyShareableLink() {
+            let vpa = document.getElementById("vpa").value.trim();
+            if (!vpa || !vpa.includes('@')) {
+                showNotify("Generate details first!", true);
+                return;
+            }
+
+            let params = new URLSearchParams();
+            params.append('pa', vpa);
+            
+            let name = document.getElementById("name").value.trim();
+            if(name) params.append('pn', name);
+            
+            let amount = document.getElementById("amount").value.trim();
+            if(amount) params.append('am', parseFloat(amount).toFixed(2));
+            
+            let note = document.getElementById("note").value.trim();
+            if(note) params.append('tn', note);
+
+            const currentUrl = window.location.origin + window.location.pathname;
+            const shareableUrl = `${currentUrl}?${params.toString()}`;
+
+            navigator.clipboard.writeText(shareableUrl).then(() => {
+                showNotify("Website Payment Link Copied!");
+            });
+        }
+
+        function downloadQR() {
+            const img = qrContainer.querySelector("img");
+            if (img && img.src) {
+                const link = document.createElement("a");
+                link.href = img.src;
+                link.download = "UPI_Payment.png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showNotify("QR Code Downloaded");
+            } else {
+                showNotify("Generate QR first!", true);
+            }
+        }
+
+        function showNotify(msg, isError = false) {
+            const notif = document.getElementById("notify");
+            const txt = document.getElementById("notifyMsg");
+            
+            notif.style.background = isError ? "#ef4444" : "#10b981";
+            txt.innerText = msg;
+            notif.classList.add("show");
+            
+            setTimeout(() => {
+                notif.classList.remove("show");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
