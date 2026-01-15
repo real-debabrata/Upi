@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultra UPI | Secure Payment Gateway</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- QR Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            /* DARK THEME (DEFAULT) */
+            --bg-deep: #050505;
+            --primary: #5b21b6;
+            --primary-light: #8b5cf6;
+            --accent: #06b6d4;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(0, 0, 0, 0.4);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-sec: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --blob-opacity: 0.5;
+            --btn-sec-bg: rgba(255, 255, 255, 0.05);
+            --btn-sec-hover: rgba(255, 255, 255, 0.1);
+            --theme-btn-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        /* LIGHT THEME OVERRIDES */
+        [data-theme="light"] {
+            --bg-deep: #eef2f6;
+            --primary: #6d28d9;
+            --primary-light: #7c3aed;
+            --glass: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-sec: #475569;
+            --blob-opacity: 0.15;
+            --btn-sec-bg: rgba(0, 0, 0, 0.05);
+            --btn-sec-hover: rgba(0, 0, 0, 0.1);
+            --theme-btn-bg: rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding-top: 20px;
+        }
+
+        /* Animated Background */
+        .ambient-light {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(91, 33, 182, var(--blob-opacity)) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+            z-index: -1;
+            animation: pulse 10s infinite ease-in-out;
+            pointer-events: none;
+        }
+        
+        .ambient-light-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, var(--blob-opacity)) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            z-index: -1;
+            animation: pulse 12s infinite ease-in-out reverse;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--theme-btn-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Create New Floating Button */
+        .fab-create {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 2rem;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(91, 33, 182, 0.4);
+            z-index: 150;
+            border: none;
+            transition: transform 0.3s;
+        }
+
+        .fab-create:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        /* Main Card */
+        .wrapper {
+            width: 100%;
+            max-width: 1100px;
+            margin: 20px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+            padding: 2.5rem;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            box-shadow: 0 40px 80px -20px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        /* Mode: Payer (One Column) */
+        .wrapper.payer-mode {
+            grid-template-columns: 1fr;
+            max-width: 500px;
+        }
+
+        .wrapper.payer-mode .form-side {
+            display: none;
+        }
+
+        /* Form Side */
+        .form-side {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header {
+            margin-bottom: 2.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            color: var(--primary-light);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--text-main), var(--text-sec));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-sec);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Inputs */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .field-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .field-container i {
+            position: absolute;
+            left: 16px;
+            color: var(--text-sec);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px 16px 16px 50px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+        }
+
+        input::placeholder {
+            color: var(--text-sec);
+            opacity: 0.7;
+        }
+
+        input.valid { border-color: var(--success); }
+        input.invalid { border-color: var(--error); }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 10px 20px -5px rgba(91, 33, 182, 0.5);
+        }
+
+        .generate-btn:hover { transform: translateY(-2px); }
+        .generate-btn:active { transform: scale(0.98); }
+
+        /* Preview Side */
+        .preview-side {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            border: 1px solid var(--glass-border);
+        }
+        
+        [data-theme="light"] .preview-side {
+            background: rgba(255, 255, 255, 0.5);
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        .qr-frame {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.15);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .payment-details {
+            margin-bottom: 1.5rem;
+        }
+        
+        .payee-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 5px;
+        }
+        
+        .payee-vpa {
+            font-family: monospace;
+            background: rgba(127, 127, 127, 0.15);
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .btn-sec {
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: var(--btn-sec-bg);
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-sec:hover {
+            background: var(--btn-sec-hover);
+            border-color: var(--text-sec);
+        }
+
+        .btn-full {
+            grid-column: span 2;
+            background: var(--text-main);
+            color: var(--bg-deep);
+            font-weight: 700;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-full:hover {
+            background: var(--text-main); /* Keep solid */
+            opacity: 0.9;
+        }
+
+        /* BRAND LOGOS STRIP */
+        .brand-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .brand-logos img {
+            height: 32px;
+            width: auto;
+            object-fit: contain;
+            /* Style to look like app icons - always visible */
+            background: #ffffff;
+            padding: 5px 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .brand-logos img:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* FOOTER */
+        .security-footer {
+            width: 100%;
+            max-width: 1100px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            color: var(--text-sec);
+            font-size: 0.85rem;
+        }
+
+        .sec-col h3 {
+            color: var(--text-main);
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .made-by {
+            margin-bottom: 20px;
+            color: var(--text-sec);
+            font-size: 0.9rem;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+
+        @media (max-width: 900px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                margin: 10px;
+                margin-top: 70px; /* More space for theme button */
+            }
+            h1 { font-size: 2.2rem; }
+            .security-footer {
+                grid-template-columns: 1fr;
+                padding: 0 1.5rem;
+                text-align: left;
+            }
+            .fab-create {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle" id="themeBtn" aria-label="Toggle Theme" role="button">
+        <i class="ri-sun-line"></i>
+    </div>
+
+    <!-- Create Own Link (FAB) - Visible only in Payer Mode -->
+    <button class="fab-create" id="createBtn" onclick="createOwnLink()" title="Create your own Payment Link">
+        <i class="ri-add-line"></i>
+    </button>
+
+    <div class="ambient-light"></div>
+    <div class="ambient-light-2"></div>
+
+    <div class="wrapper" id="mainWrapper">
+        <!-- Input Section (Creator View) -->
+        <div class="form-side" id="formSection">
+            <div class="header">
+                <span class="badge">UPI 2.0 Compatible</span>
+                <h1>Payment Link Generator</h1>
+                <p class="subtitle">Securely generate UPI links compatible with GPay, PhonePe, Paytm, and BHIM. Share the link or the QR.</p>
+            </div>
+
+            <form id="upiForm" onsubmit="return false;">
+                <div class="input-group">
+                    <label>UPI ID (VPA) <span style="color:var(--error)">*</span></label>
+                    <div class="field-container">
+                        <i class="ri-user-3-line"></i>
+                        <input type="text" id="vpa" placeholder="username@bank" oninput="validateVPA(this)" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Payee Name <span style="color:var(--text-sec); font-size:0.8em">(Required to avoid Errors)</span></label>
+                    <div class="field-container">
+                        <i class="ri-store-2-line"></i>
+                        <input type="text" id="name" placeholder="Exact Name on Bank Account">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label>Amount (₹)</label>
+                        <div class="field-container">
+                            <i class="ri-money-rupee-circle-line"></i>
+                            <input type="number" id="amount" placeholder="0.00" step="0.01" min="1">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Note / Remarks</label>
+                        <div class="field-container">
+                            <i class="ri-sticky-note-line"></i>
+                            <input type="text" id="note" placeholder="Rent, Bill, etc.">
+                        </div>
+                    </div>
+                </div>
+
+                <button class="generate-btn" onclick="generateQR(true)">
+                    <i class="ri-qr-code-line" style="margin-right: 8px;"></i> Generate QR Code
+                </button>
+            </form>
+        </div>
+
+        <!-- Preview Section (Both Views) -->
+        <div class="preview-side" id="previewSection">
+            <!-- Details visible only in Payer Mode -->
+            <div class="payment-details" id="payerDetails" style="display:none;">
+                <div class="payee-name" id="dispName">Merchant</div>
+                <div class="payee-vpa" id="dispVpa">user@upi</div>
+            </div>
+
+            <div class="qr-frame" id="qrContainer">
+                <div id="qrcode"></div>
+            </div>
+
+            <div class="upi-badge" style="margin-bottom: 1.5rem; color: var(--text-sec); font-size: 0.9rem;">
+                <i class="ri-shield-check-line"></i> Verified Secure Payment
+            </div>
+
+            <div class="action-buttons">
+                <a href="#" id="payLink" class="btn-sec btn-full">
+                    <i class="ri-smartphone-line"></i> Pay Now
+                </a>
+                <button class="btn-sec" onclick="copyShareableLink()">
+                    <i class="ri-share-line"></i> Share Link
+                </button>
+                <button class="btn-sec" onclick="downloadQR()">
+                    <i class="ri-download-line"></i> Save QR
+                </button>
+            </div>
+
+            <!-- Trust Logos -->
+            <div class="brand-logos">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" title="Unified Payments Interface">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" title="Google Pay">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/PhonePe_Logo.svg/1200px-PhonePe_Logo.svg.png" alt="PhonePe" title="PhonePe">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg" alt="Paytm" title="Paytm">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png" alt="Amazon" title="Amazon Pay">
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="security-footer" id="secFooter">
+        <div class="sec-col">
+            <h3><i class="ri-lock-2-fill" style="color: var(--primary-light)"></i> Security First</h3>
+            <p>Details are generated locally on your browser. No data is sent to any server.</p>
+        </div>
+        <div class="sec-col">
+            <h3><i class="ri-bank-card-fill" style="color: var(--accent)"></i> NPCI Standards</h3>
+            <p>Links adhere to NPCI UPI 2.0 specifications with proper URL encoding.</p>
+        </div>
+        <div class="sec-col">
+            <h3><i class="ri-question-fill" style="color: var(--text-main)"></i> How it Works</h3>
+            <p>Scan the QR code with any UPI app. Ensure the "Payee Name" matches your records.</p>
+        </div>
+    </footer>
+
+    <div class="made-by">Made with ❤️ by Deb & AI</div>
+
+    <div class="notification" id="notify">
+        <i class="ri-checkbox-circle-fill"></i> <span id="notifyMsg">Copied!</span>
+    </div>
+
+    <script>
+        // --- THEME LOGIC ---
+        function initThemeLogic() {
+            const themeBtn = document.getElementById('themeBtn');
+            const themeIcon = themeBtn.querySelector('i');
+            const html = document.documentElement;
+
+            function applyTheme(themeName) {
+                if (themeName === 'light') {
+                    html.setAttribute('data-theme', 'light');
+                    themeIcon.classList.remove('ri-sun-line');
+                    themeIcon.classList.add('ri-moon-line');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    html.removeAttribute('data-theme');
+                    themeIcon.classList.remove('ri-moon-line');
+                    themeIcon.classList.add('ri-sun-line');
+                    localStorage.setItem('theme', 'dark');
+                }
+            }
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    applyTheme('light');
+                } else {
+                    applyTheme('dark');
+                }
+            }
+
+            themeBtn.addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-theme');
+                if (currentTheme === 'light') {
+                    applyTheme('dark');
+                } else {
+                    applyTheme('light');
+                }
+            });
+        }
+
+        // --- QR CODE & LOGIC ---
+        const qrContainer = document.getElementById("qrcode");
+        let qrcode = new QRCode(qrContainer, {
+            text: "upi://pay?pa=example@bank&pn=Example&cu=INR",
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M // M Level for better readability
+        });
+
+        window.onload = function() {
+            initThemeLogic(); 
+            const params = new URLSearchParams(window.location.search);
+            const pa = params.get('pa');
+            
+            if (pa) {
+                enablePayerMode(params);
+            }
+        };
+
+        function enablePayerMode(params) {
+            document.getElementById('vpa').value = params.get('pa');
+            if(params.has('pn')) document.getElementById('name').value = params.get('pn');
+            if(params.has('am')) document.getElementById('amount').value = params.get('am');
+            if(params.has('tn')) document.getElementById('note').value = params.get('tn');
+
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('mainWrapper').classList.add('payer-mode');
+            
+            document.getElementById('payerDetails').style.display = 'block';
+            document.getElementById('dispVpa').textContent = params.get('pa');
+            document.getElementById('dispName').textContent = params.get('pn') || "Merchant";
+            document.getElementById('createBtn').style.display = 'flex';
+            document.getElementById('secFooter').style.display = 'none';
+
+            generateQR(false); 
+        }
+
+        function createOwnLink() {
+            window.location.href = window.location.pathname;
+        }
+
+        function validateVPA(input) {
+            let val = input.value.trim();
+            // Remove spaces from VPA immediately
+            if (val.includes(" ")) {
+                val = val.replace(/\s/g, "");
+                input.value = val;
+            }
+
+            const vpaRegex = /^[\w.-]+@[\w.-]+$/;
+            
+            if (vpaRegex.test(val)) {
+                input.classList.add('valid');
+                input.classList.remove('invalid');
+            } else if(val.length > 0) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+            } else {
+                input.classList.remove('invalid', 'valid');
+            }
+        }
+
+        function generateQR(showNotif = true) {
+            let vpa = document.getElementById("vpa").value.trim().replace(/\s/g, ""); // Clean VPA
+            let name = document.getElementById("name").value.trim();
+            let amount = document.getElementById("amount").value.trim();
+            let note = document.getElementById("note").value.trim();
+
+            if (!vpa || !vpa.includes('@')) {
+                if(showNotif) {
+                    showNotify("Please enter a valid UPI ID", true);
+                    document.getElementById("vpa").focus();
+                }
+                return;
+            }
+
+            // AUTO-FILL NAME LOGIC
+            // If name is missing, use VPA prefix but encoded properly
+            if (!name) {
+                const parts = vpa.split('@');
+                name = parts[0]; 
+                // Don't auto-fill input to avoid confusing the user, but use it for QR
+            }
+
+            // Update Payer View
+            document.getElementById('dispName').textContent = document.getElementById("name").value || name;
+            document.getElementById('dispVpa').textContent = vpa;
+
+            // --- STRICT STRING CONSTRUCTION FOR UPI ---
+            // Fix: Manual encoding. URLSearchParams uses '+' for spaces, but UPI often requires '%20'
+            
+            let upiLink = "upi://pay?pa=" + vpa;
+            
+            // Name: Must be URI encoded
+            upiLink += "&pn=" + encodeURIComponent(name);
+            
+            // Amount: Must be exactly 2 decimal places if present
+            if (amount && parseFloat(amount) > 0) {
+                upiLink += "&am=" + parseFloat(amount).toFixed(2);
+            }
+            
+            // Currency: Mandatory
+            upiLink += "&cu=INR";
+            
+            // Note: URI encoded
+            if (note) {
+                upiLink += "&tn=" + encodeURIComponent(note);
+            }
+
+            // --- GENERATION ---
+            qrcode.clear();
+            qrcode.makeCode(upiLink);
+
+            document.getElementById("payLink").href = upiLink;
+
+            const frame = document.getElementById("qrContainer");
+            frame.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                frame.style.transform = "scale(1)";
+            }, 150);
+        }
+
+        function copyShareableLink() {
+            let vpa = document.getElementById("vpa").value.trim();
+            if (!vpa || !vpa.includes('@')) {
+                showNotify("Generate details first!", true);
+                return;
+            }
+
+            // Here we use URLSearchParams because browsers handle HTTP URLs fine with standard encoding
+            let params = new URLSearchParams();
+            params.append('pa', vpa);
+            
+            let name = document.getElementById("name").value.trim();
+            // Fallback for name only if user didn't type it
+            if(!name) { 
+                name = vpa.split('@')[0];
+            }
+            params.append('pn', name);
+            
+            let amount = document.getElementById("amount").value.trim();
+            if(amount && parseFloat(amount) > 0) {
+                params.append('am', parseFloat(amount).toFixed(2));
+            }
+            
+            let note = document.getElementById("note").value.trim();
+            if(note) params.append('tn', note);
+
+            const currentUrl = window.location.origin + window.location.pathname;
+            const shareableUrl = `${currentUrl}?${params.toString()}`;
+
+            navigator.clipboard.writeText(shareableUrl).then(() => {
+                showNotify("Link Copied! Share with anyone.");
+            });
+        }
+
+        function downloadQR() {
+            const img = qrContainer.querySelector("img");
+            if (img && img.src) {
+                const link = document.createElement("a");
+                link.href = img.src;
+                link.download = "UPI_Payment_" + Math.floor(Date.now() / 1000) + ".png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showNotify("QR Code Downloaded");
+            } else {
+                showNotify("Generate QR first!", true);
+            }
+        }
+
+        function showNotify(msg, isError = false) {
+            const notif = document.getElementById("notify");
+            const txt = document.getElementById("notifyMsg");
+            
+            notif.style.background = isError ? "#ef4444" : "#10b981";
+            txt.innerText = msg;
+            notif.classList.add("show");
+            
+            setTimeout(() => {
+                notif.classList.remove("show");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
